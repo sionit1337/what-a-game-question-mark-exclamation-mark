@@ -4,10 +4,16 @@ res = (1280, 720)
 
 fps = 60
 
-black = pygame.Color(10, 5, 10)
+black = pygame.Color(1, 1, 1)
 white = pygame.Color(240, 240, 240)
-yellow = pygame.Color(255, 160, 0)
+
 red = pygame.Color(255, 0, 0)
+green = pygame.Color(0, 255, 0)
+blue = pygame.Color(0, 0, 255)
+
+yellow = pygame.Color(255, 255, 0)
+magenta = pygame.Color(255, 0, 255)
+cyan = pygame.Color(0, 255, 255)
 
 
 class Game:
@@ -18,10 +24,13 @@ class Game:
         pygame.display.set_caption("Test")
         self.clock = pygame.time.Clock()
 
-        self.player = Player()
+        self.objects = []
+
 
     def run(self):
         running = True
+
+        self.objects.append(Player(res[0] / 2, res[1] / 2, 0, 0, 15, 3, 0.2, 15, red))
 
         while running:
             for event in pygame.event.get():
@@ -30,7 +39,8 @@ class Game:
 
             self.screen.fill(black)
 
-            self.player.main(self.screen)
+            for obj in self.objects:
+                obj.main(self.screen)
 
             self.clock.tick(fps)
 
@@ -38,67 +48,76 @@ class Game:
 
 
 class Player:
-    def __init__(self, x_pos=res[0] / 2, y_pos=res[1] / 2, x_vel=0, y_vel=0, size=15):
-        self.x = x_pos
-        self.y = y_pos
+    def __init__(self, x: float, y: float, vx: float, vy: float, size: float, speed: float, friction: float, weight: float, color: pygame.Color):
+        super().__init__()
 
-        self.dx = x_vel
-        self.dy = y_vel
+        self.x = x
+        self.y = y
+
+        self.vx = vx
+        self.vy = vy
+
+        self.speed = speed
+        self.friction = friction
 
         self.size = size
-        self.weight = size / 1.5
+        self.weight = weight
 
-        self.velocity = pygame.math.Vector2()
+        self.color = color
+        self.tag = "#player"
 
-        self.gravity = 0.93
-        self.terminal_velocity = self.weight * self.gravity
-
-        self.type = "player"
 
     def draw(self, surface):
-        pygame.draw.circle(surface=surface, color=red, radius=self.size, center=(self.x, self.y))
+        pygame.draw.circle(surface, self.color, (self.x, self.y), self.size)
+
 
     def update(self):
-        self.x += self.dx
-        self.y += self.dy
+        self.x += self.vx
+        self.y += self.vy
+
+        self.vx *= (1 - self.friction)
+        self.vy *= (1 - self.friction)
 
         if self.x - self.size <= 0:
             self.x = self.size
-            self.dx *= -1
+            self.vx *= -1
 
         elif self.x + self.size >= res[0]:
             self.x = res[0] - self.size
-            self.dx *= -1
+            self.vx *= -1
 
         if self.y - self.size <= 0:
             self.y = self.size
-            self.dy *= -1
+            self.vy *= -1
 
         elif self.y + self.size >= res[1]:
             self.y = res[1] - self.size
-            self.dy *= -1
+            self.vy *= -1
+
 
     def move(self):
         keys = pygame.key.get_pressed()
 
-        self.dy *= 0.9
-        self.dx *= 0.9
-
         if keys[pygame.K_w]:
-            self.dy -= 2
+            self.apply_force(0, self.speed)
 
         if keys[pygame.K_s]:
-            self.dy += 2
+            self.apply_force(0, self.speed * -1)
 
         if keys[pygame.K_a]:
-            self.dx -= 2
+            self.apply_force(self.speed, 0)
 
         if keys[pygame.K_d]:
-            self.dx += 2
+            self.apply_force(self.speed * -1, 0)
 
 
-    def main(self, surf_for_draw):
-        self.draw(surf_for_draw)
+    def apply_force(self, vx: float, vy: float):
+        self.vx -= vx
+        self.vy -= vy
+
+
+    def main(self, surface):
+        self.draw(surface)
         self.update()
         self.move()
 
